@@ -9,7 +9,7 @@ Custom Kernel with Docker's necessary options enabled
 
 ### Notice
 
-All data and runtime paths are changed to /data/local/tmp, Because the termux prefix path length exceeds the unix socket limit
+All data and runtime paths are changed to /data/local/tmp/docker, Because the termux prefix path length exceeds the unix socket limit
 
 Status:
 
