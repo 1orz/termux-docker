@@ -5,7 +5,7 @@ Docker Stable Termux Port
 
 ### Prerequisites
 
-Custom Kernel with Docker's necessary options enabled
+Custom Kernel with Docker's necessary options enabled, for GKI kernel reference [gki-custom](https://github.com/TapetalArray/gki-custom)
 
 ### Notice
 
