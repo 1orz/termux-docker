@@ -13,6 +13,7 @@ All data and runtime paths are changed to /data/local/tmp, Because the termux pr
 
 Status:
 
+|            |        |
 |:----------:|:------:|
 | docker     | 27.3.1 |
 | containerd | 1.7.23 |
