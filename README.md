@@ -51,10 +51,16 @@ sudo containerd $>/dev/null &
 sudo dockerd $>/dev/null &
 ```
 
+#### Run Hello World
 
-### Network
+```bash
+sudo docker run Hello-world
+sudo docker run busybox
+```
 
-#### Host Network
+#### Network
+
+##### Host Network
 
 Just add --network=host flages
 
@@ -62,7 +68,7 @@ Just add --network=host flages
 sudo docker run --network something
 ```
 
-#### Bridge
+##### Bridge
 
 Edit iptable, change 192.168.1.1 according to your gateway IP
 
@@ -71,17 +77,8 @@ sudo ip route add default via 192.168.1.1 dev wlan0
 sudo ip rule add from all lookup main pref 30000
 ```
 
-#### Run Hello World or busybox
 
-
-
-```bash
-sudo docker run Hello-world
-sudo docker run busybox
-```
-
-
-### Build Use Termux-Packages
+### Build With Termux-Packages
 
 #### Clone Repo
 
