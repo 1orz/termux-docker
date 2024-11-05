@@ -1,0 +1,1259 @@
+diff --color -uNr containerd-1.7.23/archive/tar_unix.go containerd-1.7.23.mod/archive/tar_unix.go
+--- containerd-1.7.23/archive/tar_unix.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/archive/tar_unix.go	2024-11-01 10:43:50.235794458 +0800
+@@ -23,7 +23,7 @@
+ 	"errors"
+ 	"fmt"
+ 	"os"
+-	"runtime"
++	_ "runtime"
+ 	"strings"
+ 	"syscall"
+ 
+@@ -50,7 +50,7 @@
+ 
+ 	// Since `Stat_t.Rdev` is uint64, the cast turns -1 into (2^64 - 1).
+ 	// Such large values cannot be encoded in a tar header.
+-	if runtime.GOOS == "freebsd" && hdr.Typeflag != tar.TypeBlock && hdr.Typeflag != tar.TypeChar {
++	if "linux" == "freebsd" && hdr.Typeflag != tar.TypeBlock && hdr.Typeflag != tar.TypeChar {
+ 		return nil
+ 	}
+ 	s, ok := fi.Sys().(*syscall.Stat_t)
+diff --color -uNr containerd-1.7.23/client.go containerd-1.7.23.mod/client.go
+--- containerd-1.7.23/client.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/client.go	2024-11-01 10:43:50.235794458 +0800
+@@ -21,7 +21,7 @@
+ 	"context"
+ 	"encoding/json"
+ 	"fmt"
+-	"runtime"
++	_ "runtime"
+ 	"strconv"
+ 	"strings"
+ 	"sync"
+@@ -186,7 +186,7 @@
+ 	c := &Client{
+ 		defaultns: copts.defaultns,
+ 		conn:      conn,
+-		runtime:   fmt.Sprintf("%s.%s", plugin.RuntimePlugin, runtime.GOOS),
++		runtime:   fmt.Sprintf("%s.%s", plugin.RuntimePlugin, "linux"),
+ 	}
+ 
+ 	if copts.defaultPlatform != nil {
+diff --color -uNr containerd-1.7.23/container_checkpoint_opts.go containerd-1.7.23.mod/container_checkpoint_opts.go
+--- containerd-1.7.23/container_checkpoint_opts.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/container_checkpoint_opts.go	2024-11-01 10:43:50.235794458 +0800
+@@ -90,7 +90,7 @@
+ 		return err
+ 	}
+ 	desc.Platform = &imagespec.Platform{
+-		OS:           runtime.GOOS,
++		OS:           "linux",
+ 		Architecture: runtime.GOARCH,
+ 	}
+ 	index.Manifests = append(index.Manifests, desc)
+@@ -111,7 +111,7 @@
+ 			return err
+ 		}
+ 		desc.Platform = &imagespec.Platform{
+-			OS:           runtime.GOOS,
++			OS:           "linux",
+ 			Architecture: runtime.GOARCH,
+ 		}
+ 		index.Manifests = append(index.Manifests, desc)
+@@ -135,7 +135,7 @@
+ 
+ 	}
+ 	rw.Platform = &imagespec.Platform{
+-		OS:           runtime.GOOS,
++		OS:           "linux",
+ 		Architecture: runtime.GOARCH,
+ 	}
+ 	index.Manifests = append(index.Manifests, rw)
+diff --color -uNr containerd-1.7.23/content/local/writer.go containerd-1.7.23.mod/content/local/writer.go
+--- containerd-1.7.23/content/local/writer.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/content/local/writer.go	2024-11-01 10:43:50.239794458 +0800
+@@ -23,7 +23,7 @@
+ 	"io"
+ 	"os"
+ 	"path/filepath"
+-	"runtime"
++	_ "runtime"
+ 	"time"
+ 
+ 	"github.com/containerd/log"
+@@ -165,7 +165,7 @@
+ 	// This removes write and exec, only allowing read per the creation umask.
+ 	//
+ 	// NOTE: Windows does not support this operation
+-	if runtime.GOOS != "windows" {
++	if "linux" != "windows" {
+ 		if err := os.Chmod(target, (fi.Mode()&os.ModePerm)&^0333); err != nil {
+ 			log.G(ctx).WithField("ref", w.ref).Error("failed to make readonly")
+ 		}
+diff --color -uNr containerd-1.7.23/content/testsuite/testsuite.go containerd-1.7.23.mod/content/testsuite/testsuite.go
+--- containerd-1.7.23/content/testsuite/testsuite.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/content/testsuite/testsuite.go	2024-11-01 10:43:50.239794458 +0800
+@@ -23,7 +23,7 @@
+ 	"io"
+ 	"math/rand"
+ 	"os"
+-	"runtime"
++	_ "runtime"
+ 	"sync/atomic"
+ 	"testing"
+ 	"time"
+@@ -1058,7 +1058,7 @@
+ 	// FIXME: broken on windows: unexpected updated at time 2017-11-14 13:43:22.178013 -0800 PST,
+ 	// expected between 2017-11-14 13:43:22.1790195 -0800 PST m=+1.022137300 and
+ 	// 2017-11-14 13:43:22.1790195 -0800 PST m=+1.022137300
+-	if runtime.GOOS != "windows" {
++	if "linux" != "windows" {
+ 		if st.StartedAt.After(postStart) || st.StartedAt.Before(preStart) {
+ 			t.Fatalf("unexpected started at time %s, expected between %s and %s", st.StartedAt, preStart, postStart)
+ 		}
+@@ -1086,7 +1086,7 @@
+ 		t.Fatalf("unexpected offset %v", st.Offset)
+ 	}
+ 
+-	if runtime.GOOS != "windows" {
++	if "linux" != "windows" {
+ 		if st.StartedAt.After(postUpdate) || st.StartedAt.Before(postStart) {
+ 			t.Fatalf("unexpected started at time %s, expected between %s and %s", st.StartedAt, postStart, postUpdate)
+ 		}
+@@ -1113,7 +1113,7 @@
+ 	// FIXME: broken on windows: unexpected updated at time 2017-11-14 13:43:22.178013 -0800 PST,
+ 	// expected between 2017-11-14 13:43:22.1790195 -0800 PST m=+1.022137300 and
+ 	// 2017-11-14 13:43:22.1790195 -0800 PST m=+1.022137300
+-	if runtime.GOOS != "windows" && (info.UpdatedAt.After(u2) || info.UpdatedAt.Before(u1)) {
++	if "linux" != "windows" && (info.UpdatedAt.After(u2) || info.UpdatedAt.Before(u1)) {
+ 		return fmt.Errorf("unexpected updated at time %s, expected between %s and %s", info.UpdatedAt, u1, u2)
+ 	}
+ 
+diff --color -uNr containerd-1.7.23/install.go containerd-1.7.23.mod/install.go
+--- containerd-1.7.23/install.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/install.go	2024-11-01 10:43:50.239794458 +0800
+@@ -23,7 +23,7 @@
+ 	"fmt"
+ 	"os"
+ 	"path/filepath"
+-	"runtime"
++	_ "runtime"
+ 	"strings"
+ 
+ 	"github.com/containerd/containerd/archive"
+@@ -53,7 +53,7 @@
+ 	}
+ 
+ 	var binDir, libDir string
+-	if runtime.GOOS == "windows" {
++	if "linux" == "windows" {
+ 		binDir = "Files\\bin"
+ 		libDir = "Files\\lib"
+ 	} else {
+@@ -80,7 +80,7 @@
+ 				result = result || d == libDir
+ 			}
+ 
+-			if runtime.GOOS == "windows" {
++			if "linux" == "windows" {
+ 				hdr.Name = strings.Replace(hdr.Name, "Files", "", 1)
+ 			}
+ 			if result && !config.Replace {
+@@ -93,7 +93,7 @@
+ 
+ 		opts := []archive.ApplyOpt{filter}
+ 
+-		if runtime.GOOS == "windows" {
++		if "linux" == "windows" {
+ 			opts = append(opts, archive.WithNoSameOwner())
+ 		}
+ 
+diff --color -uNr containerd-1.7.23/integration/client/daemon.go containerd-1.7.23.mod/integration/client/daemon.go
+--- containerd-1.7.23/integration/client/daemon.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/integration/client/daemon.go	2024-11-01 10:43:50.239794458 +0800
+@@ -22,7 +22,7 @@
+ 	"fmt"
+ 	"io"
+ 	"os/exec"
+-	"runtime"
++	_ "runtime"
+ 	"strings"
+ 	"sync"
+ 	"syscall"
+@@ -140,7 +140,7 @@
+ 	}
+ 
+ 	signal := syscall.SIGTERM
+-	if runtime.GOOS == "windows" {
++	if "linux" == "windows" {
+ 		signal = syscall.SIGKILL
+ 	}
+ 	var err error
+diff --color -uNr containerd-1.7.23/mount/lookup_unsupported.go containerd-1.7.23.mod/mount/lookup_unsupported.go
+--- containerd-1.7.23/mount/lookup_unsupported.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/mount/lookup_unsupported.go	2024-11-01 10:43:50.239794458 +0800
+@@ -25,5 +25,5 @@
+ 
+ // Lookup returns the mount info corresponds to the path.
+ func Lookup(dir string) (Info, error) {
+-	return Info{}, fmt.Errorf("mount.Lookup is not implemented on %s/%s", runtime.GOOS, runtime.GOARCH)
++	return Info{}, fmt.Errorf("mount.Lookup is not implemented on %s/%s", "linux", runtime.GOARCH)
+ }
+diff --color -uNr containerd-1.7.23/oci/spec.go containerd-1.7.23.mod/oci/spec.go
+--- containerd-1.7.23/oci/spec.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/oci/spec.go	2024-11-01 10:43:50.239794458 +0800
+@@ -21,7 +21,7 @@
+ 	"encoding/json"
+ 	"os"
+ 	"path/filepath"
+-	"runtime"
++	_ "runtime"
+ 
+ 	"github.com/opencontainers/runtime-spec/specs-go"
+ 
+@@ -91,7 +91,7 @@
+ 		err = populateDefaultDarwinSpec(s)
+ 	default:
+ 		err = populateDefaultUnixSpec(ctx, s, id)
+-		if err == nil && runtime.GOOS == "windows" {
++		if err == nil && "linux" == "windows" {
+ 			// To run LCOW we have a Linux and Windows section. Add an empty one now.
+ 			s.Windows = &specs.Windows{}
+ 		}
+diff --color -uNr containerd-1.7.23/oci/spec_opts.go containerd-1.7.23.mod/oci/spec_opts.go
+--- containerd-1.7.23/oci/spec_opts.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/oci/spec_opts.go	2024-11-01 10:43:50.239794458 +0800
+@@ -24,7 +24,7 @@
+ 	"fmt"
+ 	"os"
+ 	"path/filepath"
+-	"runtime"
++	_ "runtime"
+ 	"strconv"
+ 	"strings"
+ 
+@@ -603,7 +603,7 @@
+ 		// can use the string to perform these same operations to grab the uid:gid inside.
+ 		//
+ 		// Mounts are not supported on Darwin, so using the same workaround.
+-		if (s.Windows != nil && s.Linux != nil) || runtime.GOOS == "darwin" {
++		if (s.Windows != nil && s.Linux != nil) || "linux" == "darwin" {
+ 			s.Process.User.Username = userstr
+ 			return nil
+ 		}
+@@ -809,7 +809,7 @@
+ func WithAdditionalGIDs(userstr string) SpecOpts {
+ 	return func(ctx context.Context, client Client, c *containers.Container, s *Spec) (err error) {
+ 		// For LCOW or on Darwin additional GID's not supported
+-		if s.Windows != nil || runtime.GOOS == "darwin" {
++		if s.Windows != nil || "linux" == "darwin" {
+ 			return nil
+ 		}
+ 		setProcess(s)
+@@ -884,7 +884,7 @@
+ func WithAppendAdditionalGroups(groups ...string) SpecOpts {
+ 	return func(ctx context.Context, client Client, c *containers.Container, s *Spec) (err error) {
+ 		// For LCOW or on Darwin additional GID's are not supported
+-		if s.Windows != nil || runtime.GOOS == "darwin" {
++		if s.Windows != nil || "linux" == "darwin" {
+ 			return nil
+ 		}
+ 		setProcess(s)
+diff --color -uNr containerd-1.7.23/pkg/cri/sbserver/helpers.go containerd-1.7.23.mod/pkg/cri/sbserver/helpers.go
+--- containerd-1.7.23/pkg/cri/sbserver/helpers.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/pkg/cri/sbserver/helpers.go	2024-11-01 10:43:50.239794458 +0800
+@@ -22,7 +22,6 @@
+ 	"path"
+ 	"path/filepath"
+ 	"regexp"
+-	goruntime "runtime"
+ 	"strconv"
+ 	"strings"
+ 	"time"
+@@ -612,7 +611,7 @@
+ // hostNetwork handles checking if host networking was requested.
+ func hostNetwork(config *runtime.PodSandboxConfig) bool {
+ 	var hostNet bool
+-	switch goruntime.GOOS {
++	switch "linux" {
+ 	case "windows":
+ 		// Windows HostProcess pods can only run on the host network
+ 		hostNet = config.GetWindows().GetSecurityContext().GetHostProcess()
+diff --color -uNr containerd-1.7.23/pkg/cri/sbserver/podsandbox/recover.go containerd-1.7.23.mod/pkg/cri/sbserver/podsandbox/recover.go
+--- containerd-1.7.23/pkg/cri/sbserver/podsandbox/recover.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/pkg/cri/sbserver/podsandbox/recover.go	2024-11-01 10:43:50.239794458 +0800
+@@ -19,7 +19,6 @@
+ import (
+ 	"context"
+ 	"fmt"
+-	goruntime "runtime"
+ 	"time"
+ 
+ 	"github.com/containerd/log"
+@@ -157,7 +156,7 @@
+ // TODO: Copy pasted from sbserver to handle container sandbox events in podsandbox/ package, needs refactoring.
+ func hostNetwork(config *runtime.PodSandboxConfig) bool {
+ 	var hostNet bool
+-	switch goruntime.GOOS {
++	switch "linux" {
+ 	case "windows":
+ 		// Windows HostProcess pods can only run on the host network
+ 		hostNet = config.GetWindows().GetSecurityContext().GetHostProcess()
+diff --color -uNr containerd-1.7.23/pkg/cri/server/container_create.go containerd-1.7.23.mod/pkg/cri/server/container_create.go
+--- containerd-1.7.23/pkg/cri/server/container_create.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/pkg/cri/server/container_create.go	2024-11-01 10:43:50.239794458 +0800
+@@ -21,7 +21,6 @@
+ 	"errors"
+ 	"fmt"
+ 	"path/filepath"
+-	goruntime "runtime"
+ 	"time"
+ 
+ 	"github.com/containerd/typeurl/v2"
+@@ -326,7 +325,7 @@
+ 		}
+ 		volumeID := util.GenerateID()
+ 		src := filepath.Join(containerRootDir, "volumes", volumeID)
+-		if !filepath.IsAbs(dst) && goruntime.GOOS != "windows" {
++		if !filepath.IsAbs(dst) && "linux" != "windows" {
+ 			oldDst := dst
+ 			dst = filepath.Join("/", dst)
+ 			log.L.Debugf("Volume destination %q is not absolute, converted to %q", oldDst, dst)
+diff --color -uNr containerd-1.7.23/pkg/cri/server/helpers.go containerd-1.7.23.mod/pkg/cri/server/helpers.go
+--- containerd-1.7.23/pkg/cri/server/helpers.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/pkg/cri/server/helpers.go	2024-11-01 10:43:50.239794458 +0800
+@@ -21,7 +21,6 @@
+ 	"fmt"
+ 	"path"
+ 	"path/filepath"
+-	goruntime "runtime"
+ 	"strconv"
+ 	"strings"
+ 	"time"
+@@ -588,7 +587,7 @@
+ // hostNetwork handles checking if host networking was requested.
+ func hostNetwork(config *runtime.PodSandboxConfig) bool {
+ 	var hostNet bool
+-	switch goruntime.GOOS {
++	switch "linux" {
+ 	case "windows":
+ 		// Windows HostProcess pods can only run on the host network
+ 		hostNet = config.GetWindows().GetSecurityContext().GetHostProcess()
+diff --color -uNr containerd-1.7.23/pkg/cri/server/sandbox_run.go containerd-1.7.23.mod/pkg/cri/server/sandbox_run.go
+--- containerd-1.7.23/pkg/cri/server/sandbox_run.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/pkg/cri/server/sandbox_run.go	2024-11-01 10:43:50.239794458 +0800
+@@ -23,7 +23,6 @@
+ 	"fmt"
+ 	"math"
+ 	"path/filepath"
+-	goruntime "runtime"
+ 	"strings"
+ 	"time"
+ 
+@@ -254,7 +253,7 @@
+ 	}
+ 
+ 	userNsEnabled := false
+-	if goruntime.GOOS != "windows" {
++	if "linux" != "windows" {
+ 		usernsOpts := config.GetLinux().GetSecurityContext().GetNamespaceOptions().GetUsernsOptions()
+ 		if usernsOpts != nil && usernsOpts.GetMode() == runtime.NamespaceMode_POD {
+ 			userNsEnabled = true
+diff --color -uNr containerd-1.7.23/plugin/plugin_go18.go containerd-1.7.23.mod/plugin/plugin_go18.go
+--- containerd-1.7.23/plugin/plugin_go18.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/plugin/plugin_go18.go	2024-11-01 10:43:50.239794458 +0800
+@@ -35,7 +35,7 @@
+ 	}
+ 	pattern := filepath.Join(abs, fmt.Sprintf(
+ 		"*-%s-%s.%s",
+-		runtime.GOOS,
++		"linux",
+ 		runtime.GOARCH,
+ 		getLibExt(),
+ 	))
+@@ -56,7 +56,7 @@
+ // getLibExt returns a platform specific lib extension for
+ // the platform that containerd is running on
+ func getLibExt() string {
+-	switch runtime.GOOS {
++	switch "linux" {
+ 	case "windows":
+ 		return "dll"
+ 	default:
+diff --color -uNr containerd-1.7.23/runtime/v2/binary.go containerd-1.7.23.mod/runtime/v2/binary.go
+--- containerd-1.7.23/runtime/v2/binary.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/runtime/v2/binary.go	2024-11-01 10:43:50.239794458 +0800
+@@ -23,7 +23,6 @@
+ 	"io"
+ 	"os"
+ 	"path/filepath"
+-	gruntime "runtime"
+ 
+ 	"github.com/containerd/containerd/api/runtime/task/v2"
+ 	"github.com/containerd/containerd/namespaces"
+@@ -154,7 +153,7 @@
+ 	// Windows cannot delete the current working directory while an executable
+ 	// is in use with it. On FreeBSD, fork/exec can fail.
+ 	var bundlePath string
+-	if gruntime.GOOS != "windows" && gruntime.GOOS != "freebsd" {
++	if "linux" != "windows" && "linux" != "freebsd" {
+ 		bundlePath = b.bundle.Path
+ 	}
+ 	args := []string{
+diff --color -uNr containerd-1.7.23/runtime/v2/bundle.go containerd-1.7.23.mod/runtime/v2/bundle.go
+--- containerd-1.7.23/runtime/v2/bundle.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/runtime/v2/bundle.go	2024-11-01 10:43:50.239794458 +0800
+@@ -21,7 +21,7 @@
+ 	"fmt"
+ 	"os"
+ 	"path/filepath"
+-	"runtime"
++	_ "runtime"
+ 
+ 	"github.com/containerd/containerd/identifiers"
+ 	"github.com/containerd/containerd/mount"
+@@ -129,7 +129,7 @@
+ func (b *Bundle) Delete() error {
+ 	work, werr := os.Readlink(filepath.Join(b.Path, "work"))
+ 	rootfs := filepath.Join(b.Path, "rootfs")
+-	if runtime.GOOS != "darwin" {
++	if "linux" != "darwin" {
+ 		if err := mount.UnmountRecursive(rootfs, 0); err != nil {
+ 			return fmt.Errorf("unmount rootfs %s: %w", rootfs, err)
+ 		}
+diff --color -uNr containerd-1.7.23/runtime/v2/runc/pause/sandbox.go containerd-1.7.23.mod/runtime/v2/runc/pause/sandbox.go
+--- containerd-1.7.23/runtime/v2/runc/pause/sandbox.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/runtime/v2/runc/pause/sandbox.go	2024-11-01 10:43:50.239794458 +0800
+@@ -78,7 +78,7 @@
+ 	log.Debugf("platform request: %+v", req)
+ 
+ 	platform := types.Platform{
+-		OS:           runtime.GOOS,
++		OS:           "linux",
+ 		Architecture: runtime.GOARCH,
+ 	}
+ 
+diff --color -uNr containerd-1.7.23/runtime/v2/shim/util_unix.go containerd-1.7.23.mod/runtime/v2/shim/util_unix.go
+--- containerd-1.7.23/runtime/v2/shim/util_unix.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/runtime/v2/shim/util_unix.go	2024-11-01 10:43:50.239794458 +0800
+@@ -25,7 +25,7 @@
+ 	"net"
+ 	"os"
+ 	"path/filepath"
+-	"runtime"
++	_ "runtime"
+ 	"strings"
+ 	"syscall"
+ 	"time"
+@@ -94,7 +94,7 @@
+ 	)
+ 
+ 	// Darwin needs +x to access socket, otherwise it'll fail with "bind: permission denied" when running as non-root.
+-	if runtime.GOOS == "darwin" {
++	if "linux" == "darwin" {
+ 		perm = 0700
+ 	}
+ 
+diff --color -uNr containerd-1.7.23/services/introspection/local.go containerd-1.7.23.mod/services/introspection/local.go
+--- containerd-1.7.23/services/introspection/local.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/services/introspection/local.go	2024-11-01 10:43:50.239794458 +0800
+@@ -21,7 +21,7 @@
+ 	"errors"
+ 	"os"
+ 	"path/filepath"
+-	"runtime"
++	_ "runtime"
+ 	"sync"
+ 
+ 	"github.com/google/uuid"
+@@ -133,7 +133,7 @@
+ 	}
+ 	pid := os.Getpid()
+ 	var pidns uint64
+-	if runtime.GOOS == "linux" {
++	if "linux" == "linux" {
+ 		pidns, err = statPIDNS(pid)
+ 		if err != nil {
+ 			return nil, errdefs.ToGRPC(err)
+diff --color -uNr containerd-1.7.23/services/server/server.go containerd-1.7.23.mod/services/server/server.go
+--- containerd-1.7.23/services/server/server.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/services/server/server.go	2024-11-01 10:43:50.239794458 +0800
+@@ -29,7 +29,7 @@
+ 	"net/http/pprof"
+ 	"os"
+ 	"path/filepath"
+-	"runtime"
++	_ "runtime"
+ 	"sync"
+ 	"sync/atomic"
+ 	"time"
+@@ -98,7 +98,7 @@
+ 		if err := sys.MkdirAllWithACL(config.TempDir, 0711); err != nil {
+ 			return err
+ 		}
+-		if runtime.GOOS == "windows" {
++		if "linux" == "windows" {
+ 			// On Windows, the Host Compute Service (vmcompute) will read the
+ 			// TEMP/TMP setting from the calling process when creating the
+ 			// tempdir to extract an image layer to. This allows the
+diff --color -uNr containerd-1.7.23/snapshots/blockfile/blockfile.go containerd-1.7.23.mod/snapshots/blockfile/blockfile.go
+--- containerd-1.7.23/snapshots/blockfile/blockfile.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/snapshots/blockfile/blockfile.go	2024-11-01 10:43:50.239794458 +0800
+@@ -22,7 +22,7 @@
+ 	"io"
+ 	"os"
+ 	"path/filepath"
+-	"runtime"
++	_ "runtime"
+ 
+ 	"github.com/containerd/containerd/mount"
+ 	"github.com/containerd/containerd/plugin"
+@@ -456,7 +456,7 @@
+ 	// a fun surprise waiting below.
+ 	//
+ 	// TODO: Enlighten other platforms (windows?)
+-	if runtime.GOOS == "darwin" {
++	if "linux" == "darwin" {
+ 		return fs.CopyFile(target, source)
+ 	}
+ 
+diff --color -uNr containerd-1.7.23/snapshots/testsuite/issues.go containerd-1.7.23.mod/snapshots/testsuite/issues.go
+--- containerd-1.7.23/snapshots/testsuite/issues.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/snapshots/testsuite/issues.go	2024-11-01 10:43:50.239794458 +0800
+@@ -19,7 +19,7 @@
+ import (
+ 	"context"
+ 	"fmt"
+-	"runtime"
++	_ "runtime"
+ 	"strings"
+ 	"testing"
+ 	"time"
+@@ -95,7 +95,7 @@
+ // See https://github.com/docker/docker/issues/24913 overlay
+ // see https://github.com/docker/docker/issues/28391 overlay2
+ func checkChown(ctx context.Context, t *testing.T, sn snapshots.Snapshotter, work string) {
+-	if runtime.GOOS == "windows" {
++	if "linux" == "windows" {
+ 		t.Skip("Chown is not supported on Windows")
+ 	}
+ 	l1Init := fstest.Apply(
+@@ -157,7 +157,7 @@
+ // checkDirectoryPermissionOnCommit
+ // https://github.com/docker/docker/issues/27298
+ func checkDirectoryPermissionOnCommit(ctx context.Context, t *testing.T, sn snapshots.Snapshotter, work string) {
+-	if runtime.GOOS == "windows" {
++	if "linux" == "windows" {
+ 		t.Skip("Chown is not supported on WCOW")
+ 	}
+ 	l1Init := fstest.Apply(
+diff --color -uNr containerd-1.7.23/snapshots/testsuite/testsuite.go containerd-1.7.23.mod/snapshots/testsuite/testsuite.go
+--- containerd-1.7.23/snapshots/testsuite/testsuite.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/snapshots/testsuite/testsuite.go	2024-11-01 10:43:50.239794458 +0800
+@@ -23,7 +23,7 @@
+ 	"fmt"
+ 	"os"
+ 	"path/filepath"
+-	"runtime"
++	_ "runtime"
+ 	"sort"
+ 	"testing"
+ 	"time"
+@@ -877,7 +877,7 @@
+ }
+ 
+ func checkRootPermission(ctx context.Context, t *testing.T, snapshotter snapshots.Snapshotter, work string) {
+-	if runtime.GOOS == "windows" {
++	if "linux" == "windows" {
+ 		t.Skip("Filesystem permissions are not supported on Windows")
+ 	}
+ 
+diff --color -uNr containerd-1.7.23/task.go containerd-1.7.23.mod/task.go
+--- containerd-1.7.23/task.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/task.go	2024-11-01 10:43:50.239794458 +0800
+@@ -626,7 +626,7 @@
+ 			Size:      d.Size,
+ 			Digest:    digest.Digest(d.Digest),
+ 			Platform: &v1.Platform{
+-				OS:           goruntime.GOOS,
++				OS:           "linux",
+ 				Architecture: goruntime.GOARCH,
+ 			},
+ 			Annotations: d.Annotations,
+@@ -644,7 +644,7 @@
+ 		return err
+ 	}
+ 	rw.Platform = &v1.Platform{
+-		OS:           goruntime.GOOS,
++		OS:           "linux",
+ 		Architecture: goruntime.GOARCH,
+ 	}
+ 	index.Manifests = append(index.Manifests, rw)
+diff --color -uNr containerd-1.7.23/vendor/github.com/cilium/ebpf/internal/unix/types_other.go containerd-1.7.23.mod/vendor/github.com/cilium/ebpf/internal/unix/types_other.go
+--- containerd-1.7.23/vendor/github.com/cilium/ebpf/internal/unix/types_other.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/github.com/cilium/ebpf/internal/unix/types_other.go	2024-11-01 10:43:50.239794458 +0800
+@@ -9,7 +9,7 @@
+ 	"syscall"
+ )
+ 
+-var errNonLinux = fmt.Errorf("unsupported platform %s/%s", runtime.GOOS, runtime.GOARCH)
++var errNonLinux = fmt.Errorf("unsupported platform %s/%s", "linux", runtime.GOARCH)
+ 
+ const (
+ 	ENOENT = syscall.ENOENT
+diff --color -uNr containerd-1.7.23/vendor/github.com/containerd/continuity/fs/copy_unix.go containerd-1.7.23.mod/vendor/github.com/containerd/continuity/fs/copy_unix.go
+--- containerd-1.7.23/vendor/github.com/containerd/continuity/fs/copy_unix.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/github.com/containerd/continuity/fs/copy_unix.go	2024-11-01 10:43:50.243794458 +0800
+@@ -22,7 +22,7 @@
+ import (
+ 	"fmt"
+ 	"os"
+-	"runtime"
++	_ "runtime"
+ 	"syscall"
+ 
+ 	"github.com/containerd/continuity/sysx"
+@@ -63,7 +63,7 @@
+ func copyXAttrs(dst, src string, excludes map[string]struct{}, errorHandler XAttrErrorHandler) error {
+ 	xattrKeys, err := sysx.LListxattr(src)
+ 	if err != nil {
+-		if os.IsPermission(err) && runtime.GOOS == "darwin" {
++		if os.IsPermission(err) && "linux" == "darwin" {
+ 			// On darwin, character devices do not permit listing xattrs
+ 			return nil
+ 		}
+diff --color -uNr containerd-1.7.23/vendor/github.com/containerd/continuity/sysx/xattr_unsupported.go containerd-1.7.23.mod/vendor/github.com/containerd/continuity/sysx/xattr_unsupported.go
+--- containerd-1.7.23/vendor/github.com/containerd/continuity/sysx/xattr_unsupported.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/github.com/containerd/continuity/sysx/xattr_unsupported.go	2024-11-01 10:43:50.243794458 +0800
+@@ -24,7 +24,7 @@
+ 	"runtime"
+ )
+ 
+-var errUnsupported = errors.New("extended attributes unsupported on " + runtime.GOOS)
++var errUnsupported = errors.New("extended attributes unsupported on " + "linux")
+ 
+ // Listxattr calls syscall listxattr and reads all content
+ // and returns a string array
+diff --color -uNr containerd-1.7.23/vendor/github.com/containerd/go-runc/io_unix.go containerd-1.7.23.mod/vendor/github.com/containerd/go-runc/io_unix.go
+--- containerd-1.7.23/vendor/github.com/containerd/go-runc/io_unix.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/github.com/containerd/go-runc/io_unix.go	2024-11-01 10:43:50.243794458 +0800
+@@ -22,7 +22,7 @@
+ 	"github.com/pkg/errors"
+ 	"github.com/sirupsen/logrus"
+ 	"golang.org/x/sys/unix"
+-	"runtime"
++	_ "runtime"
+ )
+ 
+ // NewPipeIO creates pipe pairs to be used with runc
+@@ -51,7 +51,7 @@
+ 		if err = unix.Fchown(int(stdin.r.Fd()), uid, gid); err != nil {
+ 			// TODO: revert with proper darwin solution, skipping for now
+ 			// as darwin chown is returning EINVAL on anonymous pipe
+-			if runtime.GOOS == "darwin" {
++			if "linux" == "darwin" {
+ 				logrus.WithError(err).Debug("failed to chown stdin, ignored")
+ 			} else {
+ 				return nil, errors.Wrap(err, "failed to chown stdin")
+@@ -66,7 +66,7 @@
+ 		if err = unix.Fchown(int(stdout.w.Fd()), uid, gid); err != nil {
+ 			// TODO: revert with proper darwin solution, skipping for now
+ 			// as darwin chown is returning EINVAL on anonymous pipe
+-			if runtime.GOOS == "darwin" {
++			if "linux" == "darwin" {
+ 				logrus.WithError(err).Debug("failed to chown stdout, ignored")
+ 			} else {
+ 				return nil, errors.Wrap(err, "failed to chown stdout")
+@@ -81,7 +81,7 @@
+ 		if err = unix.Fchown(int(stderr.w.Fd()), uid, gid); err != nil {
+ 			// TODO: revert with proper darwin solution, skipping for now
+ 			// as darwin chown is returning EINVAL on anonymous pipe
+-			if runtime.GOOS == "darwin" {
++			if "linux" == "darwin" {
+ 				logrus.WithError(err).Debug("failed to chown stderr, ignored")
+ 			} else {
+ 				return nil, errors.Wrap(err, "failed to chown stderr")
+diff --color -uNr containerd-1.7.23/vendor/github.com/containerd/nri/pkg/adaptation/plugin_other.go containerd-1.7.23.mod/vendor/github.com/containerd/nri/pkg/adaptation/plugin_other.go
+--- containerd-1.7.23/vendor/github.com/containerd/nri/pkg/adaptation/plugin_other.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/github.com/containerd/nri/pkg/adaptation/plugin_other.go	2024-11-01 10:43:50.243794458 +0800
+@@ -21,10 +21,10 @@
+ import (
+ 	"fmt"
+ 	"net"
+-	"runtime"
++	_ "runtime"
+ )
+ 
+ // getPeerPid returns the process id at the other end of the connection.
+ func getPeerPid(conn net.Conn) (int, error) {
+-	return 0, fmt.Errorf("getPeerPid() unimplemented on %s", runtime.GOOS)
++	return 0, fmt.Errorf("getPeerPid() unimplemented on %s", "linux")
+ }
+diff --color -uNr containerd-1.7.23/vendor/github.com/containerd/platforms/cpuinfo.go containerd-1.7.23.mod/vendor/github.com/containerd/platforms/cpuinfo.go
+--- containerd-1.7.23/vendor/github.com/containerd/platforms/cpuinfo.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/github.com/containerd/platforms/cpuinfo.go	2024-11-01 10:43:50.243794458 +0800
+@@ -35,7 +35,7 @@
+ 			var err error
+ 			cpuVariantValue, err = getCPUVariant()
+ 			if err != nil {
+-				log.L.Errorf("Error getCPUVariant for OS %s: %v", runtime.GOOS, err)
++				log.L.Errorf("Error getCPUVariant for OS %s: %v", "linux", err)
+ 			}
+ 		}
+ 	})
+diff --color -uNr containerd-1.7.23/vendor/github.com/containerd/platforms/cpuinfo_other.go containerd-1.7.23.mod/vendor/github.com/containerd/platforms/cpuinfo_other.go
+--- containerd-1.7.23/vendor/github.com/containerd/platforms/cpuinfo_other.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/github.com/containerd/platforms/cpuinfo_other.go	2024-11-01 10:43:50.243794458 +0800
+@@ -27,7 +27,7 @@
+ 
+ 	var variant string
+ 
+-	if runtime.GOOS == "windows" || runtime.GOOS == "darwin" {
++	if "linux" == "windows" || "linux" == "darwin" {
+ 		// Windows/Darwin only supports v7 for ARM32 and v8 for ARM64 and so we can use
+ 		// runtime.GOARCH to determine the variants
+ 		switch runtime.GOARCH {
+@@ -38,7 +38,7 @@
+ 		default:
+ 			variant = "unknown"
+ 		}
+-	} else if runtime.GOOS == "freebsd" {
++	} else if "linux" == "freebsd" {
+ 		// FreeBSD supports ARMv6 and ARMv7 as well as ARMv4 and ARMv5 (though deprecated)
+ 		// detecting those variants is currently unimplemented
+ 		switch runtime.GOARCH {
+@@ -48,7 +48,7 @@
+ 			variant = "unknown"
+ 		}
+ 	} else {
+-		return "", fmt.Errorf("getCPUVariant for OS %s: %v", runtime.GOOS, errNotImplemented)
++		return "", fmt.Errorf("getCPUVariant for OS %s: %v", "linux", errNotImplemented)
+ 	}
+ 
+ 	return variant, nil
+diff --color -uNr containerd-1.7.23/vendor/github.com/containerd/platforms/database.go containerd-1.7.23.mod/vendor/github.com/containerd/platforms/database.go
+--- containerd-1.7.23/vendor/github.com/containerd/platforms/database.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/github.com/containerd/platforms/database.go	2024-11-01 10:43:50.243794458 +0800
+@@ -17,7 +17,7 @@
+ package platforms
+ 
+ import (
+-	"runtime"
++	_ "runtime"
+ 	"strings"
+ )
+ 
+@@ -61,7 +61,7 @@
+ 
+ func normalizeOS(os string) string {
+ 	if os == "" {
+-		return runtime.GOOS
++		return "linux"
+ 	}
+ 	os = strings.ToLower(os)
+ 
+diff --color -uNr containerd-1.7.23/vendor/github.com/containerd/platforms/defaults_darwin.go containerd-1.7.23.mod/vendor/github.com/containerd/platforms/defaults_darwin.go
+--- containerd-1.7.23/vendor/github.com/containerd/platforms/defaults_darwin.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/github.com/containerd/platforms/defaults_darwin.go	2024-11-01 10:43:50.243794458 +0800
+@@ -27,7 +27,7 @@
+ // DefaultSpec returns the current platform's default platform specification.
+ func DefaultSpec() specs.Platform {
+ 	return specs.Platform{
+-		OS:           runtime.GOOS,
++		OS:           "linux",
+ 		Architecture: runtime.GOARCH,
+ 		// The Variant field will be empty if arch != ARM.
+ 		Variant: cpuVariant(),
+diff --color -uNr containerd-1.7.23/vendor/github.com/containerd/platforms/defaults_freebsd.go containerd-1.7.23.mod/vendor/github.com/containerd/platforms/defaults_freebsd.go
+--- containerd-1.7.23/vendor/github.com/containerd/platforms/defaults_freebsd.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/github.com/containerd/platforms/defaults_freebsd.go	2024-11-01 10:43:50.243794458 +0800
+@@ -25,7 +25,7 @@
+ // DefaultSpec returns the current platform's default platform specification.
+ func DefaultSpec() specs.Platform {
+ 	return specs.Platform{
+-		OS:           runtime.GOOS,
++		OS:           "linux",
+ 		Architecture: runtime.GOARCH,
+ 		// The Variant field will be empty if arch != ARM.
+ 		Variant: cpuVariant(),
+diff --color -uNr containerd-1.7.23/vendor/github.com/containerd/platforms/defaults_unix.go containerd-1.7.23.mod/vendor/github.com/containerd/platforms/defaults_unix.go
+--- containerd-1.7.23/vendor/github.com/containerd/platforms/defaults_unix.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/github.com/containerd/platforms/defaults_unix.go	2024-11-01 10:43:50.243794458 +0800
+@@ -27,7 +27,7 @@
+ // DefaultSpec returns the current platform's default platform specification.
+ func DefaultSpec() specs.Platform {
+ 	return specs.Platform{
+-		OS:           runtime.GOOS,
++		OS:           "linux",
+ 		Architecture: runtime.GOARCH,
+ 		// The Variant field will be empty if arch != ARM.
+ 		Variant: cpuVariant(),
+diff --color -uNr containerd-1.7.23/vendor/github.com/containerd/platforms/defaults_windows.go containerd-1.7.23.mod/vendor/github.com/containerd/platforms/defaults_windows.go
+--- containerd-1.7.23/vendor/github.com/containerd/platforms/defaults_windows.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/github.com/containerd/platforms/defaults_windows.go	2024-11-01 10:43:50.243794458 +0800
+@@ -30,7 +30,7 @@
+ func DefaultSpec() specs.Platform {
+ 	major, minor, build := windows.RtlGetNtVersionNumbers()
+ 	return specs.Platform{
+-		OS:           runtime.GOOS,
++		OS:           "linux",
+ 		Architecture: runtime.GOARCH,
+ 		OSVersion:    fmt.Sprintf("%d.%d.%d", major, minor, build),
+ 		// The Variant field will be empty if arch != ARM.
+diff --color -uNr containerd-1.7.23/vendor/github.com/containerd/platforms/platforms.go containerd-1.7.23.mod/vendor/github.com/containerd/platforms/platforms.go
+--- containerd-1.7.23/vendor/github.com/containerd/platforms/platforms.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/github.com/containerd/platforms/platforms.go	2024-11-01 10:43:50.243794458 +0800
+@@ -236,7 +236,7 @@
+ 			p.Variant = ""
+ 		}
+ 		if isKnownArch(p.Architecture) {
+-			p.OS = runtime.GOOS
++			p.OS = "linux"
+ 			return p, nil
+ 		}
+ 
+diff --color -uNr containerd-1.7.23/vendor/github.com/containers/ocicrypt/crypto/pkcs11/utils.go containerd-1.7.23.mod/vendor/github.com/containers/ocicrypt/crypto/pkcs11/utils.go
+--- containerd-1.7.23/vendor/github.com/containers/ocicrypt/crypto/pkcs11/utils.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/github.com/containers/ocicrypt/crypto/pkcs11/utils.go	2024-11-01 10:43:50.243794458 +0800
+@@ -92,7 +92,7 @@
+ 	ht := ""
+ 	ot := ""
+ 	st := ""
+-	switch runtime.GOOS {
++	switch "linux" {
+ 	case "linux":
+ 		ot = "linux"
+ 		st = "gnu"
+diff --color -uNr containerd-1.7.23/vendor/github.com/fsnotify/fsnotify/backend_other.go containerd-1.7.23.mod/vendor/github.com/fsnotify/fsnotify/backend_other.go
+--- containerd-1.7.23/vendor/github.com/fsnotify/fsnotify/backend_other.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/github.com/fsnotify/fsnotify/backend_other.go	2024-11-01 10:43:50.243794458 +0800
+@@ -5,7 +5,7 @@
+ 
+ import (
+ 	"fmt"
+-	"runtime"
++	_ "runtime"
+ )
+ 
+ // Watcher watches a set of files, delivering events to a channel.
+@@ -13,7 +13,7 @@
+ 
+ // NewWatcher creates a new Watcher.
+ func NewWatcher() (*Watcher, error) {
+-	return nil, fmt.Errorf("fsnotify not supported on %s", runtime.GOOS)
++	return nil, fmt.Errorf("fsnotify not supported on %s", "linux")
+ }
+ 
+ // Close removes all watches and closes the events channel.
+diff --color -uNr containerd-1.7.23/vendor/github.com/klauspost/cpuid/v2/detect_arm64.go containerd-1.7.23.mod/vendor/github.com/klauspost/cpuid/v2/detect_arm64.go
+--- containerd-1.7.23/vendor/github.com/klauspost/cpuid/v2/detect_arm64.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/github.com/klauspost/cpuid/v2/detect_arm64.go	2024-11-01 10:43:50.243794458 +0800
+@@ -4,7 +4,7 @@
+ 
+ package cpuid
+ 
+-import "runtime"
++import _ "runtime"
+ 
+ func getMidr() (midr uint64)
+ func getProcFeatures() (procFeatures uint64)
+@@ -23,7 +23,7 @@
+ 	detectOS(c)
+ 
+ 	// ARM64 disabled since it may crash if interrupt is not intercepted by OS.
+-	if safe && !c.Supports(ARMCPUID) && runtime.GOOS != "freebsd" {
++	if safe && !c.Supports(ARMCPUID) && "linux" != "freebsd" {
+ 		return
+ 	}
+ 	midr := getMidr()
+diff --color -uNr containerd-1.7.23/vendor/github.com/klauspost/cpuid/v2/os_darwin_arm64.go containerd-1.7.23.mod/vendor/github.com/klauspost/cpuid/v2/os_darwin_arm64.go
+--- containerd-1.7.23/vendor/github.com/klauspost/cpuid/v2/os_darwin_arm64.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/github.com/klauspost/cpuid/v2/os_darwin_arm64.go	2024-11-01 10:43:50.243794458 +0800
+@@ -2,7 +2,7 @@
+ 
+ package cpuid
+ 
+-import "runtime"
++import _ "runtime"
+ 
+ func detectOS(c *CPUInfo) bool {
+ 	// There are no hw.optional sysctl values for the below features on Mac OS 11.0
+@@ -10,6 +10,6 @@
+ 	// Apple Silicon M1 supports to be available as a minimal set of features
+ 	// to all Go programs running on darwin/arm64.
+ 	// TODO: Add more if we know them.
+-	c.featureSet.setIf(runtime.GOOS != "ios", AESARM, PMULL, SHA1, SHA2)
++	c.featureSet.setIf("linux" != "ios", AESARM, PMULL, SHA1, SHA2)
+ 	return true
+ }
+diff --color -uNr containerd-1.7.23/vendor/github.com/klauspost/cpuid/v2/os_linux_arm64.go containerd-1.7.23.mod/vendor/github.com/klauspost/cpuid/v2/os_linux_arm64.go
+--- containerd-1.7.23/vendor/github.com/klauspost/cpuid/v2/os_linux_arm64.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/github.com/klauspost/cpuid/v2/os_linux_arm64.go	2024-11-01 10:43:50.243794458 +0800
+@@ -10,7 +10,7 @@
+ import (
+ 	"encoding/binary"
+ 	"io/ioutil"
+-	"runtime"
++	_ "runtime"
+ 	"unsafe"
+ )
+ 
+@@ -124,7 +124,7 @@
+ 	// The Samsung S9+ kernel reports support for atomics, but not all cores
+ 	// actually support them, resulting in SIGILL. See issue #28431.
+ 	// TODO(elias.naur): Only disable the optimization on bad chipsets on android.
+-	c.featureSet.setIf(isSet(hwcap, hwcap_ATOMICS) && runtime.GOOS != "android", ATOMICS)
++	c.featureSet.setIf(isSet(hwcap, hwcap_ATOMICS) && "linux" != "android", ATOMICS)
+ 
+ 	return true
+ }
+diff --color -uNr containerd-1.7.23/vendor/github.com/minio/sha256-simd/cpuid_other.go containerd-1.7.23.mod/vendor/github.com/minio/sha256-simd/cpuid_other.go
+--- containerd-1.7.23/vendor/github.com/minio/sha256-simd/cpuid_other.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/github.com/minio/sha256-simd/cpuid_other.go	2024-11-01 10:43:50.243794458 +0800
+@@ -27,7 +27,7 @@
+ 	if cpuid.CPU.Has(cpuid.SHA2) {
+ 		return true
+ 	}
+-	if runtime.GOARCH != "arm64" || runtime.GOOS != "linux" {
++	if runtime.GOARCH != "arm64" || "linux" != "linux" {
+ 		return false
+ 	}
+ 
+diff --color -uNr containerd-1.7.23/vendor/github.com/mistifyio/go-zfs/v3/utils.go containerd-1.7.23.mod/vendor/github.com/mistifyio/go-zfs/v3/utils.go
+--- containerd-1.7.23/vendor/github.com/mistifyio/go-zfs/v3/utils.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/github.com/mistifyio/go-zfs/v3/utils.go	2024-11-01 10:43:50.243794458 +0800
+@@ -7,7 +7,7 @@
+ 	"io"
+ 	"os/exec"
+ 	"regexp"
+-	"runtime"
++	_ "runtime"
+ 	"strconv"
+ 	"strings"
+ 
+@@ -121,7 +121,7 @@
+ 		return err
+ 	}
+ 
+-	if runtime.GOOS == "solaris" {
++	if "linux" == "solaris" {
+ 		return nil
+ 	}
+ 
+diff --color -uNr containerd-1.7.23/vendor/github.com/moby/sys/mountinfo/mountinfo_unsupported.go containerd-1.7.23.mod/vendor/github.com/moby/sys/mountinfo/mountinfo_unsupported.go
+--- containerd-1.7.23/vendor/github.com/moby/sys/mountinfo/mountinfo_unsupported.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/github.com/moby/sys/mountinfo/mountinfo_unsupported.go	2024-11-01 10:43:50.243794458 +0800
+@@ -8,7 +8,7 @@
+ 	"runtime"
+ )
+ 
+-var errNotImplemented = fmt.Errorf("not implemented on %s/%s", runtime.GOOS, runtime.GOARCH)
++var errNotImplemented = fmt.Errorf("not implemented on %s/%s", "linux", runtime.GOARCH)
+ 
+ func parseMountTable(_ FilterFunc) ([]*Info, error) {
+ 	return nil, errNotImplemented
+diff --color -uNr containerd-1.7.23/vendor/github.com/sirupsen/logrus/text_formatter.go containerd-1.7.23.mod/vendor/github.com/sirupsen/logrus/text_formatter.go
+--- containerd-1.7.23/vendor/github.com/sirupsen/logrus/text_formatter.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/github.com/sirupsen/logrus/text_formatter.go	2024-11-01 10:43:50.243794458 +0800
+@@ -115,7 +115,7 @@
+ }
+ 
+ func (f *TextFormatter) isColored() bool {
+-	isColored := f.ForceColors || (f.isTerminal && (runtime.GOOS != "windows"))
++	isColored := f.ForceColors || (f.isTerminal && ("linux" != "windows"))
+ 
+ 	if f.EnvironmentOverrideColors {
+ 		switch force, ok := os.LookupEnv("CLICOLOR_FORCE"); {
+diff --color -uNr containerd-1.7.23/vendor/github.com/urfave/cli/flag.go containerd-1.7.23.mod/vendor/github.com/urfave/cli/flag.go
+--- containerd-1.7.23/vendor/github.com/urfave/cli/flag.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/github.com/urfave/cli/flag.go	2024-11-01 10:43:50.243794458 +0800
+@@ -5,7 +5,7 @@
+ 	"fmt"
+ 	"io/ioutil"
+ 	"reflect"
+-	"runtime"
++	_ "runtime"
+ 	"strconv"
+ 	"strings"
+ 	"syscall"
+@@ -191,7 +191,7 @@
+ 		prefix := "$"
+ 		suffix := ""
+ 		sep := ", $"
+-		if runtime.GOOS == "windows" {
++		if "linux" == "windows" {
+ 			prefix = "%"
+ 			suffix = "%"
+ 			sep = "%, %"
+diff --color -uNr containerd-1.7.23/vendor/go.etcd.io/bbolt/db.go containerd-1.7.23.mod/vendor/go.etcd.io/bbolt/db.go
+--- containerd-1.7.23/vendor/go.etcd.io/bbolt/db.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/go.etcd.io/bbolt/db.go	2024-11-01 10:43:50.243794458 +0800
+@@ -6,7 +6,7 @@
+ 	"hash/fnv"
+ 	"io"
+ 	"os"
+-	"runtime"
++	_ "runtime"
+ 	"sort"
+ 	"sync"
+ 	"time"
+@@ -28,7 +28,7 @@
+ // syncing changes to a file.  This is required as some operating systems,
+ // such as OpenBSD, do not have a unified buffer cache (UBC) and writes
+ // must be synchronized using the msync(2) syscall.
+-const IgnoreNoSync = runtime.GOOS == "openbsd"
++const IgnoreNoSync = "linux" == "openbsd"
+ 
+ // Default values if not set in a DB instance.
+ const (
+@@ -1158,7 +1158,7 @@
+ 	// Truncate and fsync to ensure file size metadata is flushed.
+ 	// https://github.com/boltdb/bolt/issues/284
+ 	if !db.NoGrowSync && !db.readOnly {
+-		if runtime.GOOS != "windows" {
++		if "linux" != "windows" {
+ 			if err := db.file.Truncate(int64(sz)); err != nil {
+ 				return fmt.Errorf("file resize error: %s", err)
+ 			}
+diff --color -uNr containerd-1.7.23/vendor/golang.org/x/net/http2/server.go containerd-1.7.23.mod/vendor/golang.org/x/net/http2/server.go
+--- containerd-1.7.23/vendor/golang.org/x/net/http2/server.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/golang.org/x/net/http2/server.go	2024-11-01 10:43:50.247794458 +0800
+@@ -744,7 +744,7 @@
+ 	// build tags, so I can't make an http2_windows.go file with
+ 	// Windows-specific stuff. Fix that and move this, once we
+ 	// have a way to bundle this into std's net/http somehow.
+-	if runtime.GOOS == "windows" {
++	if "linux" == "windows" {
+ 		if oe, ok := err.(*net.OpError); ok && oe.Op == "read" {
+ 			if se, ok := oe.Err.(*os.SyscallError); ok && se.Syscall == "wsarecv" {
+ 				const WSAECONNABORTED = 10053
+diff --color -uNr containerd-1.7.23/vendor/golang.org/x/sys/cpu/cpu_arm64.go containerd-1.7.23.mod/vendor/golang.org/x/sys/cpu/cpu_arm64.go
+--- containerd-1.7.23/vendor/golang.org/x/sys/cpu/cpu_arm64.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/golang.org/x/sys/cpu/cpu_arm64.go	2024-11-01 10:43:50.247794458 +0800
+@@ -4,7 +4,7 @@
+ 
+ package cpu
+ 
+-import "runtime"
++import _ "runtime"
+ 
+ // cacheLineSize is used to prevent false sharing of cache lines.
+ // We choose 128 because Apple Silicon, a.k.a. M1, has 128-byte cache line size.
+@@ -41,7 +41,7 @@
+ }
+ 
+ func archInit() {
+-	switch runtime.GOOS {
++	switch "linux" {
+ 	case "freebsd":
+ 		readARM64Registers()
+ 	case "linux", "netbsd", "openbsd":
+diff --color -uNr containerd-1.7.23/vendor/golang.org/x/sys/cpu/cpu_x86.go containerd-1.7.23.mod/vendor/golang.org/x/sys/cpu/cpu_x86.go
+--- containerd-1.7.23/vendor/golang.org/x/sys/cpu/cpu_x86.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/golang.org/x/sys/cpu/cpu_x86.go	2024-11-01 10:43:50.247794458 +0800
+@@ -91,7 +91,7 @@
+ 		// Check if XMM and YMM registers have OS support.
+ 		osSupportsAVX = isSet(1, eax) && isSet(2, eax)
+ 
+-		if runtime.GOOS == "darwin" {
++		if "linux" == "darwin" {
+ 			// Darwin doesn't save/restore AVX-512 mask registers correctly across signal handlers.
+ 			// Since users can't rely on mask register contents, let's not advertise AVX-512 support.
+ 			// See issue 49233.
+diff --color -uNr containerd-1.7.23/vendor/golang.org/x/sys/unix/sockcmsg_unix_other.go containerd-1.7.23.mod/vendor/golang.org/x/sys/unix/sockcmsg_unix_other.go
+--- containerd-1.7.23/vendor/golang.org/x/sys/unix/sockcmsg_unix_other.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/golang.org/x/sys/unix/sockcmsg_unix_other.go	2024-11-01 10:43:50.247794458 +0800
+@@ -16,7 +16,7 @@
+ 
+ 	// dragonfly needs to check ABI version at runtime, see cmsgAlignOf in
+ 	// sockcmsg_dragonfly.go
+-	switch runtime.GOOS {
++	switch "linux" {
+ 	case "aix":
+ 		// There is no alignment on AIX.
+ 		salign = 1
+@@ -33,7 +33,7 @@
+ 			salign = 8
+ 		}
+ 		// NetBSD aarch64 requires 128-bit alignment.
+-		if runtime.GOOS == "netbsd" && runtime.GOARCH == "arm64" {
++		if "linux" == "netbsd" && runtime.GOARCH == "arm64" {
+ 			salign = 16
+ 		}
+ 	case "zos":
+diff --color -uNr containerd-1.7.23/vendor/golang.org/x/sys/unix/syscall_bsd.go containerd-1.7.23.mod/vendor/golang.org/x/sys/unix/syscall_bsd.go
+--- containerd-1.7.23/vendor/golang.org/x/sys/unix/syscall_bsd.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/golang.org/x/sys/unix/syscall_bsd.go	2024-11-01 10:43:50.247794458 +0800
+@@ -13,7 +13,7 @@
+ package unix
+ 
+ import (
+-	"runtime"
++	_ "runtime"
+ 	"syscall"
+ 	"unsafe"
+ )
+@@ -274,7 +274,7 @@
+ 	if err != nil {
+ 		return
+ 	}
+-	if (runtime.GOOS == "darwin" || runtime.GOOS == "ios") && len == 0 {
++	if ("linux" == "darwin" || "linux" == "ios") && len == 0 {
+ 		// Accepted socket has no address.
+ 		// This is likely due to a bug in xnu kernels,
+ 		// where instead of ECONNABORTED error socket
+@@ -298,7 +298,7 @@
+ 	}
+ 	// TODO(jsing): DragonFly has a "bug" (see issue 3349), which should be
+ 	// reported upstream.
+-	if runtime.GOOS == "dragonfly" && rsa.Addr.Family == AF_UNSPEC && rsa.Addr.Len == 0 {
++	if "linux" == "dragonfly" && rsa.Addr.Family == AF_UNSPEC && rsa.Addr.Len == 0 {
+ 		rsa.Addr.Family = AF_UNIX
+ 		rsa.Addr.Len = SizeofSockaddrUnix
+ 	}
+diff --color -uNr containerd-1.7.23/vendor/golang.org/x/term/terminal.go containerd-1.7.23.mod/vendor/golang.org/x/term/terminal.go
+--- containerd-1.7.23/vendor/golang.org/x/term/terminal.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/golang.org/x/term/terminal.go	2024-11-01 10:43:50.247794458 +0800
+@@ -7,7 +7,7 @@
+ import (
+ 	"bytes"
+ 	"io"
+-	"runtime"
++	_ "runtime"
+ 	"strconv"
+ 	"sync"
+ 	"unicode/utf8"
+@@ -962,12 +962,12 @@
+ 					ret = ret[:len(ret)-1]
+ 				}
+ 			case '\n':
+-				if runtime.GOOS != "windows" {
++				if "linux" != "windows" {
+ 					return ret, nil
+ 				}
+ 				// otherwise ignore \n
+ 			case '\r':
+-				if runtime.GOOS == "windows" {
++				if "linux" == "windows" {
+ 					return ret, nil
+ 				}
+ 				// otherwise ignore \r
+diff --color -uNr containerd-1.7.23/vendor/golang.org/x/term/term_plan9.go containerd-1.7.23.mod/vendor/golang.org/x/term/term_plan9.go
+--- containerd-1.7.23/vendor/golang.org/x/term/term_plan9.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/golang.org/x/term/term_plan9.go	2024-11-01 10:43:50.247794458 +0800
+@@ -22,21 +22,21 @@
+ }
+ 
+ func makeRaw(fd int) (*State, error) {
+-	return nil, fmt.Errorf("terminal: MakeRaw not implemented on %s/%s", runtime.GOOS, runtime.GOARCH)
++	return nil, fmt.Errorf("terminal: MakeRaw not implemented on %s/%s", "linux", runtime.GOARCH)
+ }
+ 
+ func getState(fd int) (*State, error) {
+-	return nil, fmt.Errorf("terminal: GetState not implemented on %s/%s", runtime.GOOS, runtime.GOARCH)
++	return nil, fmt.Errorf("terminal: GetState not implemented on %s/%s", "linux", runtime.GOARCH)
+ }
+ 
+ func restore(fd int, state *State) error {
+-	return fmt.Errorf("terminal: Restore not implemented on %s/%s", runtime.GOOS, runtime.GOARCH)
++	return fmt.Errorf("terminal: Restore not implemented on %s/%s", "linux", runtime.GOARCH)
+ }
+ 
+ func getSize(fd int) (width, height int, err error) {
+-	return 0, 0, fmt.Errorf("terminal: GetSize not implemented on %s/%s", runtime.GOOS, runtime.GOARCH)
++	return 0, 0, fmt.Errorf("terminal: GetSize not implemented on %s/%s", "linux", runtime.GOARCH)
+ }
+ 
+ func readPassword(fd int) ([]byte, error) {
+-	return nil, fmt.Errorf("terminal: ReadPassword not implemented on %s/%s", runtime.GOOS, runtime.GOARCH)
++	return nil, fmt.Errorf("terminal: ReadPassword not implemented on %s/%s", "linux", runtime.GOARCH)
+ }
+diff --color -uNr containerd-1.7.23/vendor/golang.org/x/term/term_unsupported.go containerd-1.7.23.mod/vendor/golang.org/x/term/term_unsupported.go
+--- containerd-1.7.23/vendor/golang.org/x/term/term_unsupported.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/golang.org/x/term/term_unsupported.go	2024-11-01 10:43:50.247794458 +0800
+@@ -18,21 +18,21 @@
+ }
+ 
+ func makeRaw(fd int) (*State, error) {
+-	return nil, fmt.Errorf("terminal: MakeRaw not implemented on %s/%s", runtime.GOOS, runtime.GOARCH)
++	return nil, fmt.Errorf("terminal: MakeRaw not implemented on %s/%s", "linux", runtime.GOARCH)
+ }
+ 
+ func getState(fd int) (*State, error) {
+-	return nil, fmt.Errorf("terminal: GetState not implemented on %s/%s", runtime.GOOS, runtime.GOARCH)
++	return nil, fmt.Errorf("terminal: GetState not implemented on %s/%s", "linux", runtime.GOARCH)
+ }
+ 
+ func restore(fd int, state *State) error {
+-	return fmt.Errorf("terminal: Restore not implemented on %s/%s", runtime.GOOS, runtime.GOARCH)
++	return fmt.Errorf("terminal: Restore not implemented on %s/%s", "linux", runtime.GOARCH)
+ }
+ 
+ func getSize(fd int) (width, height int, err error) {
+-	return 0, 0, fmt.Errorf("terminal: GetSize not implemented on %s/%s", runtime.GOOS, runtime.GOARCH)
++	return 0, 0, fmt.Errorf("terminal: GetSize not implemented on %s/%s", "linux", runtime.GOARCH)
+ }
+ 
+ func readPassword(fd int) ([]byte, error) {
+-	return nil, fmt.Errorf("terminal: ReadPassword not implemented on %s/%s", runtime.GOOS, runtime.GOARCH)
++	return nil, fmt.Errorf("terminal: ReadPassword not implemented on %s/%s", "linux", runtime.GOARCH)
+ }
+diff --color -uNr containerd-1.7.23/vendor/go.opentelemetry.io/otel/sdk/resource/process.go containerd-1.7.23.mod/vendor/go.opentelemetry.io/otel/sdk/resource/process.go
+--- containerd-1.7.23/vendor/go.opentelemetry.io/otel/sdk/resource/process.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/go.opentelemetry.io/otel/sdk/resource/process.go	2024-11-01 10:43:50.247794458 +0800
+@@ -48,7 +48,7 @@
+ 		return runtime.Compiler
+ 	}
+ 	defaultRuntimeVersionProvider runtimeVersionProvider = runtime.Version
+-	defaultRuntimeOSProvider      runtimeOSProvider      = func() string { return runtime.GOOS }
++	defaultRuntimeOSProvider      runtimeOSProvider      = func() string { return "linux" }
+ 	defaultRuntimeArchProvider    runtimeArchProvider    = func() string { return runtime.GOARCH }
+ )
+ 
+diff --color -uNr containerd-1.7.23/vendor/k8s.io/client-go/pkg/version/version.go containerd-1.7.23.mod/vendor/k8s.io/client-go/pkg/version/version.go
+--- containerd-1.7.23/vendor/k8s.io/client-go/pkg/version/version.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/k8s.io/client-go/pkg/version/version.go	2024-11-01 10:43:50.247794458 +0800
+@@ -37,6 +37,6 @@
+ 		BuildDate:    buildDate,
+ 		GoVersion:    runtime.Version(),
+ 		Compiler:     runtime.Compiler,
+-		Platform:     fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
++		Platform:     fmt.Sprintf("%s/%s", "linux", runtime.GOARCH),
+ 	}
+ }
+diff --color -uNr containerd-1.7.23/vendor/k8s.io/client-go/rest/config.go containerd-1.7.23.mod/vendor/k8s.io/client-go/rest/config.go
+--- containerd-1.7.23/vendor/k8s.io/client-go/rest/config.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/k8s.io/client-go/rest/config.go	2024-11-01 10:43:50.247794458 +0800
+@@ -499,7 +499,7 @@
+ 	return buildUserAgent(
+ 		adjustCommand(os.Args[0]),
+ 		adjustVersion(version.Get().GitVersion),
+-		gruntime.GOOS,
++		"linux",
+ 		gruntime.GOARCH,
+ 		adjustCommit(version.Get().GitCommit))
+ }
+diff --color -uNr containerd-1.7.23/vendor/k8s.io/component-base/version/version.go containerd-1.7.23.mod/vendor/k8s.io/component-base/version/version.go
+--- containerd-1.7.23/vendor/k8s.io/component-base/version/version.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/k8s.io/component-base/version/version.go	2024-11-01 10:43:50.247794458 +0800
+@@ -37,6 +37,6 @@
+ 		BuildDate:    buildDate,
+ 		GoVersion:    runtime.Version(),
+ 		Compiler:     runtime.Compiler,
+-		Platform:     fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
++		Platform:     fmt.Sprintf("%s/%s", "linux", runtime.GOARCH),
+ 	}
+ }
+diff --color -uNr containerd-1.7.23/vendor/k8s.io/klog/v2/klog.go containerd-1.7.23.mod/vendor/k8s.io/klog/v2/klog.go
+--- containerd-1.7.23/vendor/k8s.io/klog/v2/klog.go	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/vendor/k8s.io/klog/v2/klog.go	2024-11-01 10:43:50.247794458 +0800
+@@ -1060,7 +1060,7 @@
+ 	var buf bytes.Buffer
+ 	fmt.Fprintf(&buf, "Log file created at: %s\n", now.Format("2006/01/02 15:04:05"))
+ 	fmt.Fprintf(&buf, "Running on machine: %s\n", host)
+-	fmt.Fprintf(&buf, "Binary: Built with %s %s for %s/%s\n", runtime.Compiler, runtime.Version(), runtime.GOOS, runtime.GOARCH)
++	fmt.Fprintf(&buf, "Binary: Built with %s %s for %s/%s\n", runtime.Compiler, runtime.Version(), "linux", runtime.GOARCH)
+ 	fmt.Fprintf(&buf, "Log line format: [IWEF]mmdd hh:mm:ss.uuuuuu threadid file:line] msg\n")
+ 	n, err := sb.file.Write(buf.Bytes())
+ 	sb.nbytes += uint64(n)

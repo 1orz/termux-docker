@@ -1,0 +1,30 @@
+diff --color -uNr containerd-1.7.23/Makefile containerd-1.7.23.mod/Makefile
+--- containerd-1.7.23/Makefile	2024-10-15 04:31:48.000000000 +0800
++++ containerd-1.7.23.mod/Makefile	2024-10-31 08:29:42.706698970 +0800
+@@ -82,7 +82,7 @@
+ PKG=github.com/containerd/containerd
+ 
+ # Project binaries.
+-COMMANDS=ctr containerd containerd-stress
++COMMANDS=ctr containerd containerd-stress containerd-shim containerd-shim-runc-v1 containerd-shim-runc-v2
+ MANPAGES=ctr.8 containerd.8 containerd-config.8 containerd-config.toml.5
+ 
+ ifdef BUILDTAGS
+@@ -102,7 +102,7 @@
+ endif
+ GO_LDFLAGS+='
+ 
+-SHIM_GO_LDFLAGS=-ldflags '-X $(PKG)/version.Version=$(VERSION) -X $(PKG)/version.Revision=$(REVISION) -X $(PKG)/version.Package=$(PACKAGE) -extldflags "-static" $(EXTRA_LDFLAGS)'
++SHIM_GO_LDFLAGS=-ldflags '-X $(PKG)/version.Version=$(VERSION) -X $(PKG)/version.Revision=$(REVISION) -X $(PKG)/version.Package=$(PACKAGE) -extldflags $(EXTRA_LDFLAGS)'
+ 
+ # Project packages.
+ PACKAGES=$(shell $(GO) list ${GO_TAGS} ./... | grep -v /vendor/ | grep -v /integration)
+@@ -424,7 +424,7 @@
+ install: ## install binaries
+ 	@echo "$(WHALE) $@ $(BINARIES)"
+ 	@$(INSTALL) -d $(DESTDIR)$(PREFIX)/bin
+-	@$(INSTALL) $(BINARIES) $(DESTDIR)$(PREFIX)/bin
++	@$(INSTALL) bin/ctr bin/containerd bin/containerd-stress bin/containerd-shim bin/containerd-shim-runc-v1 bin/containerd-shim-runc-v2 $(DESTDIR)$(PREFIX)/bin
+ 
+ uninstall:
+ 	@echo "$(WHALE) $@"
