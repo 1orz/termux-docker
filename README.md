@@ -31,6 +31,20 @@ pkg i ./*.deb
 
 ### Usage
 
+#### Mount Cgroup
+
+```bash
+for cg in blkio cpu cpuacct cpuset devices freezer memory; do
+   if [ ! -d "/sys/fs/cgroup/${cg}" ]; then
+       sudo mkdir -p "/sys/fs/cgroup/${cg}"
+   fi
+
+   if ! sudo mountpoint -q "/sys/fs/cgroup/${cg}"; then
+       sudo mount -t cgroup -o "${cg}" cgroup "/sys/fs/cgroup/${cg}" || true
+   fi
+done
+```
+
 #### Basic Environment
 
 Add to your .bashrc or .profile
@@ -46,9 +60,9 @@ Termux not use any init system, just manual start daemon
 
 ```bash
 # containerd
-sudo containerd $>/dev/null &
+sudo containerd &>/dev/null &
 # dockerd
-sudo dockerd $>/dev/null &
+sudo dockerd &>/dev/null &
 ```
 
 #### Run Hello World
