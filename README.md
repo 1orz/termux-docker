@@ -50,7 +50,7 @@ done
 Add to your .bashrc or .profile
 
 ```bash
-alias sudo="sudo -E"
+alias sudoe="sudo -E"
 export DOCKER_HOST=unix:///data/local/tmp/docker/run/docker.sock
 ```
 
