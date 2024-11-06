@@ -113,6 +113,11 @@ cp -r termux-docker-stable/packages/* termux-packages/packages
 ```
 
 
+## Also See
+* [termux-docker-compose](https://github.com/TapetalArray/termux-docker-compose)
+* [termux-lxd-stable](https://github.com/TapetalArray/termux-lxd-stable)
+
+
 # Credits
 
 * [docker](https://github.com/docker)
